@@ -1,7 +1,6 @@
-const { Router } = require("express")
-const router = new Router();
-const { User } = require("../models/user")
-const jwt = require("jsonwebtoken")
+const express = require("express");
+const router = new express.Router();
+const User = require("../models/user")
 
 /** POST /login - login: {username, password} => {token}
  *
@@ -16,14 +15,15 @@ const jwt = require("jsonwebtoken")
  *
  *  Make sure to update their last-login!
  */
-
-Router.post("/register", async (req, res, next) => {
+router.post("/register", async (req, res, next) => {
     try {
         const { username, password, first_name, last_name, phone } = req.body;
         let user = await User.register(username, password, first_name, last_name, phone);
-        return res.json(user)        
+        return res.json(user);
     } catch (e) {
         next(e)
     }
-
 })
+
+
+module.exports = router;
