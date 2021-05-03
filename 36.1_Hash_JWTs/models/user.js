@@ -1,6 +1,7 @@
 const bcrypt = require("bcrypt");
-const { BCRYPT_WORK_FACTOR } = require("../config")
+const { BCRYPT_WORK_FACTOR, SECRET_KEY } = require("../config")
 const db = require("../db");
+const jwt = require("jsonwebtoken");
 
 /** User class for message.ly */
 
@@ -17,7 +18,7 @@ class User {
   static async register(un, pw, f_name, l_name, phone_num) {
     // hash the pw 
     let hashedPassword = await bcrypt.hash(pw, BCRYPT_WORK_FACTOR);
-    console.log(hashedPassword)
+    // create a timestamp for join_at
     let timestamp = new Date();
     // save to db
     const results = await db.query(
@@ -31,7 +32,19 @@ class User {
 
   /** Authenticate: is this username/password valid? Returns boolean. */
 
-  static async authenticate(username, password) { }
+  static async authenticate(username, password) {
+    // search username in db
+    const result = await db.query(`
+    SELECT username, password FROM users
+    WHERE username = $1
+    `, [username])
+    const user = result.rows[0];
+    if (user) {
+      if (await bcrypt.compare(password, user.password)) {
+        return true
+      }
+    }
+  }
 
   /** Update last_login_at for user */
 
