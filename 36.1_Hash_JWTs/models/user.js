@@ -39,6 +39,8 @@ class User {
     WHERE username = $1
     `, [username])
     const user = result.rows[0];
+
+    // if a user is found, compare pw
     if (user) {
       if (await bcrypt.compare(password, user.password)) {
         return true
@@ -48,10 +50,20 @@ class User {
 
   /** Update last_login_at for user */
 
-  static async updateLoginTimestamp(username) { }
+  static async updateLoginTimestamp(username) {
 
-  /** All: basic info on all users:
-   * [{username, first_name, last_name, phone}, ...] */
+    /** All: basic info on all users:
+     * [{username, first_name, last_name, phone}, ...] */
+    // make new timestamp
+    const last_logged_in = new Date();
+    // Add last logged in, into db 
+    const result = await db.query(
+      `UPDATE users SET last_login_at = $1
+      WHERE username = $2
+      RETURNING username, first_name, last_name, phone, last_login_at`,
+      [last_logged_in, username]);
+    return result
+  }
 
   static async all() { }
 
