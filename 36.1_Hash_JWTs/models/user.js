@@ -71,6 +71,9 @@ class User {
       `SELECT username, first_name, last_name, phone
       FROM users;`
     )
+    if (results.rows.length === 0) {
+      throw new ExpressError("No user in database", 404)
+    }
     return results;
   }
 
