@@ -37,7 +37,13 @@ router.post("/register", async (req, res, next) => {
     try {
         const { username, password, first_name, last_name, phone } = req.body;
         let user = await User.register(username, password, first_name, last_name, phone);
-        return res.json(user);
+        if (user) {
+            const token = jwt.sign({ username }, SECRET_KEY);
+            // update last logged in
+            User.updateLoginTimestamp(username);
+            return res.json({ msg: "Logged in successfully", token })
+        }
+        
     } catch (e) {
         next(e)
     }
