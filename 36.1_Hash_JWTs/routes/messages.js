@@ -3,7 +3,7 @@ const router = new express.Router();
 const Message = require("../models/message")
 const jwt = require("jsonwebtoken");
 const { SECRET_KEY } = require("../config");
-const ExpressError = require("../expressError");
+const { ensureLoggedIn, authenticateJWT } = require("../middleware/auth")
 
 /** GET /:id - get detail of message.
  *
@@ -17,7 +17,7 @@ const ExpressError = require("../expressError");
  * Make sure that the currently-logged-in users is either the to or from user.
  *
  **/
-router.get("/:id", async (req, res, next) => {
+router.get("/:id", authenticateJWT, async (req, res, next) => {
     try {
         const result = await Message.get(req.params.id);
         const { id, body, sent_at, read_at, from_user, to_user } = result;
@@ -35,7 +35,6 @@ router.get("/:id", async (req, res, next) => {
     } catch (e) {
         next(e)
     }
-
 })
 
 /** POST / - post message.
@@ -45,7 +44,7 @@ router.get("/:id", async (req, res, next) => {
  *
  **/
 
-router.post("/", async (req, res, next) => {
+router.post("/", ensureLoggedIn, async (req, res, next) => {
     try {
         const result = await Message.create(req.body);
         return res.json({message: { result }})        
@@ -60,7 +59,7 @@ router.post("/", async (req, res, next) => {
  *
  *  => {message: {id, read_at}}
  *
- * Make sure that the only the intended recipient can mark as read.
+ * Make sure that only the intended recipient can mark as read.
  *
  **/
 
