@@ -106,7 +106,28 @@ class User {
    *   {username, first_name, last_name, phone}
    */
 
-  static async messagesFrom(username) { }
+  static async messagesFrom(username) {
+    const result = await db.query(
+      `SELECT
+      m.id,
+      m.body,
+      m.sent_at,
+      m.read_at,
+      m.from_username,
+      u.username,
+      u.first_name,
+      u.last_name,
+      u.phone
+      FROM messages AS m
+      JOIN users AS u ON m.from_username = u.username
+      WHERE u.username = $1`,
+      [username])
+    if (result.rows.length === 0) {
+      throw new ExpressError(`No messages to ${username}`, 400)
+    }
+    // incorrect formatting
+    return result.rows
+   }
 
   /** Return messages to this user.
    *
@@ -115,8 +136,20 @@ class User {
    * where from_user is
    *   {id, first_name, last_name, phone}
    */
+  
 
-  static async messagesTo(username) { }
+  static async messagesTo(username) {
+    const result = await db.query(
+      `SELECT id, from_username, body, sent_at, read_at
+      FROM messages
+      WHERE to_username=$1`,
+      [username])
+    if (result.rows.length === 0) {
+      throw new ExpressError(`No messages from ${username}`, 400)
+    }
+    // incorrect formatting
+    return result.rows
+   }
 }
 
 
