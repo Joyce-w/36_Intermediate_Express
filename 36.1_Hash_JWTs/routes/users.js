@@ -1,7 +1,7 @@
-const express = require("express");
+const express = require("express")
 const router = new express.Router();
 const User = require("../models/user")
-const { ensureLoggedIn, ensureCorrectUser, authenticateJWT } = require("../middleware/auth")
+const { ensureLoggedIn, ensureCorrectUser } = require("../middleware/auth")
 
 /** GET / - get list of users.
  *
@@ -44,8 +44,7 @@ router.get("/:username", ensureCorrectUser, async (req, res, next) => {
  **/
 router.get("/:username/to",ensureCorrectUser, async (req, res, next) => {
     try {
-        const { username } = req.params;
-        const result = await User.messagesTo(username);
+        const result = await User.messagesTo(req.params.username);
         return res.json({messages: result})
     } catch (e) {
         next(e)
@@ -63,8 +62,7 @@ router.get("/:username/to",ensureCorrectUser, async (req, res, next) => {
  **/
 router.get("/:username/from",ensureCorrectUser, async (req, res, next) => {
     try {
-        const { username } = req.params;
-        const result = await User.messagesFrom(username);
+        const result = await User.messagesFrom( req.params.username);
         return res.json({messages: result})
     } catch (e) {
         next(e)

@@ -1,7 +1,6 @@
-const bcrypt = require("bcrypt");
-const { BCRYPT_WORK_FACTOR, SECRET_KEY } = require("../config")
 const db = require("../db");
-const jwt = require("jsonwebtoken");
+const bcrypt = require("bcrypt");
+const { BCRYPT_WORK_FACTOR } = require("../config")
 const ExpressError = require("../expressError");
 
 /** User class for message.ly */
@@ -23,8 +22,8 @@ class User {
     let timestamp = new Date();
     // save to db
     const results = await db.query(
-      `INSERT INTO users (username, password, first_name, last_name, phone, join_at)
-      VALUES ($1, $2, $3, $4, $5, $6)
+      `INSERT INTO users (username, password, first_name, last_name, phone, join_at, last_login_at)
+      VALUES ($1, $2, $3, $4, $5, $6, current_timestamp)
       RETURNING username, password, first_name, last_name, phone`,
       [un, hashedPassword, f_name, l_name, phone_num, timestamp])
     console.log(results.rows[0])
@@ -60,7 +59,10 @@ class User {
       WHERE username = $2
       RETURNING username, first_name, last_name, phone, last_login_at`,
       [last_logged_in, username]);
-    return result
+    
+    if (!result.rows[0]) {
+      throw new ExpressError(`No such user: ${username}`, 404);
+    }
   }
 
     /** All: basic info on all users:
@@ -93,7 +95,7 @@ class User {
       [username]
     )
     if (result.rows.length === 0) {
-      throw new ExpressError("This user does not exist", 400)
+      throw new ExpressError("This user does not exist", 404)
     }
     return result;
   }
@@ -125,9 +127,21 @@ class User {
     if (result.rows.length === 0) {
       throw new ExpressError(`No messages to ${username}`, 400)
     }
-    // incorrect formatting
-    return result.rows
-   }
+    return result.rows.map(m => ({
+      id: m.id,
+      to_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.sent_at
+    }))
+  
+  }
+   
 
   /** Return messages to this user.
    *
@@ -140,16 +154,37 @@ class User {
 
   static async messagesTo(username) {
     const result = await db.query(
-      `SELECT id, from_username, body, sent_at, read_at
-      FROM messages
-      WHERE to_username=$1`,
+      `SELECT
+      m.id,
+      m.body,
+      m.sent_at,
+      m.read_at,
+      m.from_username,
+      u.first_name,
+      u.last_name,
+      u.phone
+      FROM messages AS m
+      JOIN users AS u ON m.from_username = u.username
+      WHERE to_username = $1`,
       [username])
     if (result.rows.length === 0) {
-      throw new ExpressError(`No messages from ${username}`, 400)
+      throw new ExpressError(`No messages to ${username}`, 400)
     }
-    // incorrect formatting
-    return result.rows
-   }
+    return result.rows.map(m => ({
+        id: m.id,
+      from_user: {
+        username: m.username,
+        first_name: m.first_name,
+        last_name: m.last_name,
+        phone: m.phone
+      },
+      body: m.body,
+      sent_at: m.sent_at,
+      read_at: m.read_at
+    }))
+  }
+  
+  
 }
 
 
