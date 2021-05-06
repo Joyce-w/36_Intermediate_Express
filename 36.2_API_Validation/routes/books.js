@@ -34,7 +34,9 @@ router.get("/:id", async function (req, res, next) {
 
 router.post("/", async function (req, res, next) {
   try {
+    // validate req w/ schema
     const result = jsonschema.validate(req.body, bookSchema);
+    // map invalid results and return them
     if (!result.valid) {
       const listOfErrors = result.errors.map(err => err.stack)
       let error = new ExpressError(listOfErrors, 400)
@@ -53,6 +55,13 @@ router.post("/", async function (req, res, next) {
 
 router.put("/:isbn", async function (req, res, next) {
   try {
+    const result = jsonschema.validate(req.body, bookSchema);
+    if (!result.valid) {
+      console.log(result)
+      let errors = result.errors.map(err => err.stack);
+      let errorMsgs = new ExpressError(errors, 400);
+      return next(errorMsgs)
+    }
     const book = await Book.update(req.params.isbn, req.body);
     return res.json({ book });
   } catch (err) {
