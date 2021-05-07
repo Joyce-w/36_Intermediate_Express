@@ -1,6 +1,6 @@
-CREATE DATABASE books;
+CREATE DATABASE books_test;
 
-\c books;
+\c books_test;
 
 CREATE TABLE books (
   isbn TEXT PRIMARY KEY,
